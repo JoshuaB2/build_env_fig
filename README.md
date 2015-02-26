@@ -24,7 +24,7 @@ GitLab, Jenkins, Artifactory Build Environment with Swarm Build Nodes
 
 ####Jenkins:
 Set the time zone for Jenkins by passing a Java opt.
-- JAVA_OPTS=-Duser.timezone=America/Los_Angeles
+    - JAVA_OPTS=-Duser.timezone=America/Los_Angeles
 <br>
 
 ####Sample Swarm Client:
