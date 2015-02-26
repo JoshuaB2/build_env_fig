@@ -1,0 +1,81 @@
+postgresql:
+  image: build_env:postgresql
+  hostname: postgres
+  environment:
+    - DB_USER=gitlab
+    - DB_PASS=<password>
+    - DB_NAME=gitlabhq_production
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - <local mapped volume>:/var/lib/postgresql
+
+redis:
+  image: build_env:redis
+  hostname: redis
+  volumes:
+    - /etc/localtime:/etc/localtime:ro
+
+gitlab:
+   image: build_env:gitlab
+   hostname: gitlab
+   environment:
+    - GITLAB_PORT=10080
+    - GITLAB_SSH_PORT=10022
+    - GITLAB_HOST=<gitlab hostname>
+    - GITLAB_EMAIL=<gitlab reply to email address>
+    - SMTP_ENABLED=true
+    - SMTP_HOST=<snmp hostname>
+    - SMTP_PORT=25
+    - SMTP_DOMAIN=<snmp domainname>
+    - SMTP_STARTTLS=false
+    - DB_USER=gitlab
+    - DB_PASS=<password>
+    - DB_NAME=gitlabhq_production
+    - REDIS_HOST=redis
+    - REDIS_PORT=6379
+    - GITLAB_BACKUP=daily
+   links:
+    - postgresql:postgresql
+    - redis:redis
+   volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - <local mapped volume>:/run/docker.sock
+    - <local mapped volume>:/home/git/data
+   ports:
+    - "10080:80"
+    - "10022:22"
+
+artifactory:
+   image: build_env:artifactory
+   hostname: artifactory
+   volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - <local mapped volume>:/artifactory
+   ports:
+    - "8081:8080"
+
+jenkins:
+   image: build_env:jenkins
+   hostname: jenkins
+   environment:
+    - JAVA_OPTS=-Duser.timezone=America/Los_Angeles
+   links:
+    - artifactory:artifactory
+    - gitlab:gitlab
+   volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - <local mapped volume>:/var/jenkins_home
+   ports:
+    - "8080:8080"
+    - "50000:50000"
+
+sampleSwarmClient:
+   image: build_env:swarm
+   hostname: swarm_client
+   command: -master http://<jenkins server url> -name swarm_client -fsroot /home/jenkins -labels swarm -username swarm -password hosts -executors 1
+   links:
+    - artifactory:artifactory
+    - gitlab:gitlab
+    - jenkins:jenkins
+   volumes:
+   - /etc/localtime:/etcmlocaltime:ro
